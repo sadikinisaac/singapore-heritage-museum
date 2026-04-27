@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Singapore Heritage Museum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <!-- ─── NAV ─────────────────────────────────────────────────── -->
+  <nav class="nav">
+    <div class="nav__brand">
+      <span class="nav__lion">&#12539;</span>
+      Singapore Heritage Museum
+    </div>
+    <ul class="nav__links">
+      <li><a href="#exhibits">Exhibits</a></li>
+      <li><a href="#events">Events</a></li>
+      <li><a href="#visit">Visit</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── HERO ─────────────────────────────────────────────────── -->
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <p class="hero__tagline">Discover · Remember · Inspire</p>
+      <h1 class="hero__title">
+        The Story of<br /><em>Singapore</em>
+      </h1>
+      <p class="hero__sub">
+        Five centuries of culture, trade, and nationhood — told through
+        artefacts, stories, and living memory.
+      </p>
+      <div class="hero__cta-row">
+        <a href="#exhibits" class="btn btn--primary">Explore Exhibits</a>
+        <a href="#events" class="btn btn--ghost">Upcoming Events</a>
+      </div>
+    </div>
+    <div class="hero__scroll">scroll</div>
+  </header>
+
+  <!-- ─── EXHIBITS ─────────────────────────────────────────────── -->
+  <section class="section" id="exhibits">
+    <div class="section__header">
+      <span class="section__label">Permanent Collection</span>
+      <h2 class="section__title">Current Exhibits</h2>
+    </div>
+    <div class="exhibits-grid" id="exhibits-grid">
+      <div class="loading-spinner"></div>
+    </div>
+  </section>
+
+  <!-- ─── EVENTS ───────────────────────────────────────────────── -->
+  <section class="section section--dark" id="events">
+    <div class="section__header">
+      <span class="section__label">What's On</span>
+      <h2 class="section__title">Upcoming Events</h2>
+    </div>
+    <div class="events-list" id="events-list">
+      <div class="loading-spinner"></div>
+    </div>
+  </section>
+
+  <!-- ─── TICKET MODAL ──────────────────────────────────────────── -->
+  <div class="modal" id="ticket-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__backdrop" id="modal-backdrop"></div>
+    <div class="modal__box">
+      <button class="modal__close" id="modal-close" aria-label="Close">&#x2715;</button>
+      <h3 class="modal__title" id="modal-title">Book Tickets</h3>
+      <p class="modal__event-name" id="modal-event-name"></p>
+      <div class="form-group">
+        <label for="f-name">Full Name</label>
+        <input type="text" id="f-name" placeholder="Tan Wei Lin" />
+      </div>
+      <div class="form-group">
+        <label for="f-email">Email</label>
+        <input type="email" id="f-email" placeholder="wei@example.com" />
+      </div>
+      <div class="form-group">
+        <label for="f-qty">Number of Tickets</label>
+        <input type="number" id="f-qty" min="1" max="10" value="1" />
+      </div>
+      <div class="form-msg" id="form-msg"></div>
+      <button class="btn btn--primary btn--full" id="submit-booking">Confirm Booking</button>
+    </div>
+  </div>
+
+  <!-- ─── VISIT ─────────────────────────────────────────────────── -->
+  <section class="section" id="visit">
+    <div class="section__header">
+      <span class="section__label">Plan Your Trip</span>
+      <h2 class="section__title">Visit Us</h2>
+    </div>
+    <div class="visit-grid">
+      <div class="visit-card">
+        <div class="visit-card__icon">&#128344;</div>
+        <h4>Opening Hours</h4>
+        <p>Tuesday – Sunday<br />10:00 AM – 6:00 PM<br /><em>Closed on Mondays & Public Holidays</em></p>
+      </div>
+      <div class="visit-card">
+        <div class="visit-card__icon">&#128205;</div>
+        <h4>Location</h4>
+        <p>93 Stamford Road<br />Singapore 178897<br /><em>Near City Hall MRT</em></p>
+      </div>
+      <div class="visit-card">
+        <div class="visit-card__icon">&#127993;</div>
+        <h4>Admission</h4>
+        <p>Adult: SGD 15<br />Child / Senior: SGD 8<br /><em>Citizens & PRs: 50% off</em></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">Singapore Heritage Museum</div>
+      <p class="footer__copy">&copy; 2025 Singapore Heritage Museum. All rights reserved.</p>
+      <div class="footer__health">
+        API Status: <span id="health-status" class="health-dot">&#9679;</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

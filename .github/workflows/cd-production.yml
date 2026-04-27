@@ -1,0 +1,144 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CD Pipeline — Production Branch
+# Triggers on: push / merge to main (production)
+# IMPORTANT: Uses PROD_* secrets — completely separate from staging credentials
+# Requires manual approval via GitHub Environments protection rule
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CD — Production Deployment
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/singapore-museum
+
+jobs:
+  security-gate:
+    name: Pre-Production Security Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Full dependency audit
+        run: |
+          pip install pip-audit bandit
+          pip-audit -r app/requirements.txt
+          bandit -r app/ -ll    # ll = medium + high severity only
+
+      - name: Verify no .env or secrets committed
+        run: |
+          if git log --all --full-history -- '*.env' | grep commit; then
+            echo "::error::.env file detected in git history!"
+            exit 1
+          fi
+          if grep -rI "SECRET_KEY\s*=\s*['\"][^$]" app/; then
+            echo "::error::Hardcoded secret detected in source code!"
+            exit 1
+          fi
+
+  build-prod:
+    name: Build & Scan Production Image
+    runs-on: ubuntu-latest
+    needs: security-gate
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Production uses a SEPARATE registry token with write-only access
+      - name: Log in to GHCR (production token)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PROD_REGISTRY_TOKEN }}   # different from staging
+
+      - name: Build production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          load: true
+          # Production builds use specific pinned base image digest (reproducibility)
+          build-args: |
+            BUILD_DATE=${{ github.run_id }}
+            GIT_SHA=${{ github.sha }}
+
+      - name: Trivy container scan (zero tolerance)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          format: "sarif"
+          output: "trivy-prod.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"   # stricter than staging
+          exit-code: "1"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-prod.sarif
+
+      - name: Push production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-prod
+    # GitHub Environment "production" should have:
+    #   - Required reviewers (at least 1 approver)
+    #   - Wait timer (optional: 5 min cooling-off)
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Production secrets are ENTIRELY separate from staging
+      - name: Deploy with Docker Compose (production)
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.prod.yml \
+            up -d --force-recreate
+        env:
+          APP_VERSION: ${{ github.sha }}
+          SECRET_KEY: ${{ secrets.PROD_SECRET_KEY }}      # separate from STAGING_SECRET_KEY
+          FLASK_ENV: production
+
+      - name: Health check — production
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 http://localhost/health || \
+            (echo "::error::Production health check failed!" && exit 1)
+
+      - name: Tag release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/release-${context.sha.slice(0,7)}`,
+              sha: context.sha
+            });

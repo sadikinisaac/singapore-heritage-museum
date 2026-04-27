@@ -1,0 +1,15 @@
+[bandit]
+# Bandit SAST configuration for Singapore Heritage Museum
+# Docs: https://bandit.readthedocs.io/
+
+# Directories to exclude
+exclude_dirs = ["tests", ".venv", "venv"]
+
+# Severity thresholds: UNDEFINED, LOW, MEDIUM, HIGH
+# We treat HIGH as pipeline-breaking (done in CI script)
+level = LOW
+confidence = MEDIUM
+
+# Skipped test IDs (with justification):
+# B104 – binding to 0.0.0.0 is intentional inside Docker
+skips = ["B104"]
