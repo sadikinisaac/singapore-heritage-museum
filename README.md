@@ -128,6 +128,12 @@ singapore-museum-devsecops/
 │   ├── nginx.conf              # Nginx main config
 │   └── default.conf            # Virtual host + security headers + rate limiting
 │
+├── terraform/
+│   ├── main.tf                 # AWS infrastructure resources
+│   ├── provider.tf             # Terraform provider configuration
+│   ├── variables.tf            # Input variables
+│   └── outputs.tf              # Terraform outputs
+
 ├── tests/
 │   ├── __init__.py
 │   └── test_app.py             # Pytest unit tests

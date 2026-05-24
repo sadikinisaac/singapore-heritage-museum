@@ -1,8 +1,3 @@
-
-provider "aws" {
-  region = var.aws_region
-}
-
 resource "aws_ecr_repository" "museum_repo" {
   name = "singapore-heritage-museum"
 }
@@ -38,13 +33,13 @@ resource "aws_db_subnet_group" "aurora_subnets" {
 }
 
 resource "aws_rds_cluster" "aurora_cluster" {
-  cluster_identifier      = "museum-aurora-cluster"
-  engine                  = "aurora-postgresql"
-  engine_mode             = "provisioned"
-  master_username         = var.db_username
-  master_password         = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.aurora_subnets.name
-  skip_final_snapshot     = true
+  cluster_identifier   = "museum-aurora-cluster"
+  engine               = "aurora-postgresql"
+  engine_mode          = "provisioned"
+  master_username      = var.db_username
+  master_password      = var.db_password
+  db_subnet_group_name = aws_db_subnet_group.aurora_subnets.name
+  skip_final_snapshot  = true
 }
 
 resource "aws_ecs_service" "museum_service" {
