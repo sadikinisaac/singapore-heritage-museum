@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # ── App Factory ───────────────────────────────────────────────────────────────
 def create_app():
     app = Flask(__name__)
@@ -221,4 +222,8 @@ app = create_app()
 
 if __name__ == "__main__":
     debug = os.getenv("FLASK_ENV") == "development"
-    app.run(host="0.0.0.0", port=5000, debug=debug)
+    app.run(
+        host="0.0.0.0",  # nosec B104
+        port=5000,
+        debug=debug,
+    )
