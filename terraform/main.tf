@@ -338,3 +338,79 @@ resource "aws_ecs_service" "museum_service" {
 
   tags = local.common_tags
 }
+
+data "aws_iam_openid_connect_provider" "github_actions" {
+  url = "https://token.actions.githubusercontent.com"
+}
+
+resource "aws_iam_role" "github_actions_deploy_role" {
+  name = "${local.name}-github-actions-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = data.aws_iam_openid_connect_provider.github_actions.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = var.github_actions_allowed_refs
+          }
+        }
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "github_actions_deploy_policy" {
+  name = "${local.name}-github-actions-deploy-policy"
+  role = aws_iam_role.github_actions_deploy_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRAuthorization"
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECRPushImage"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeImages",
+          "ecr:DescribeRepositories",
+          "ecr:InitiateLayerUpload",
+          "ecr:ListImages",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart"
+        ]
+        Resource = aws_ecr_repository.museum_repo.arn
+      },
+      {
+        Sid    = "ECSRedeploy"
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
+          "ecs:ListTasks",
+          "ecs:UpdateService"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

@@ -41,3 +41,7 @@ output "health_check_url" {
 output "secret_arn" {
   value = aws_secretsmanager_secret.app_secret.arn
 }
+
+output "github_actions_role_arn" {
+  value = aws_iam_role.github_actions_deploy_role.arn
+}
