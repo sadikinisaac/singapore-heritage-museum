@@ -128,6 +128,12 @@ singapore-museum-devsecops/
 │   ├── nginx.conf              # Nginx main config
 │   └── default.conf            # Virtual host + security headers + rate limiting
 │
+├── terraform/
+│   ├── main.tf                 # AWS infrastructure resources
+│   ├── provider.tf             # Terraform provider configuration
+│   ├── variables.tf            # Input variables
+│   └── outputs.tf              # Terraform outputs
+
 ├── tests/
 │   ├── __init__.py
 │   └── test_app.py             # Pytest unit tests
@@ -604,7 +610,38 @@ This is a key DevSecOps requirement. The table below shows how each environment 
 
 ---
 
-## 15. Troubleshooting
+## 15. AWS ECS Fargate Deployment
+
+This project has been extended from a local Docker Compose deployment to a cloud deployment on AWS using Amazon ECR, Amazon ECS Fargate, an Application Load Balancer, IAM, AWS Secrets Manager, and CloudWatch Logs.
+
+The local development setup still uses Docker Compose with Nginx and Flask/Gunicorn. The AWS deployment uses the existing Flask/Gunicorn container image and exposes it through an internet-facing Application Load Balancer.
+
+## AWS Architecture
+Developer / GitHub
+      |
+      | docker build
+      v
+Docker image
+      |
+      | docker push
+      v
+Amazon ECR
+      |
+      | ECS pulls image
+      v
+Amazon ECS Fargate Service
+      |
+      | Target Group: port 5000
+      v
+Application Load Balancer
+      |
+      | HTTP :80
+      v
+Users / Browser
+
+---
+
+## 16. Troubleshooting
 
 ### App container won't start
 
