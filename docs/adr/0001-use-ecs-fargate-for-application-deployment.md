@@ -14,7 +14,7 @@ The Singapore Heritage Museum project is a DevSecOps capstone application built 
 
 The application currently runs successfully in local development using Docker Compose. For the cloud deployment, the team needs a managed AWS deployment model that can run the containerised Flask/Gunicorn application, expose it publicly through a load balancer, support secure secret handling, and integrate with CI/CD and infrastructure-as-code practices.
 
-The team is small, the application is currently a single service, and the system does not yet require a complex distributed microservices platform. The capstone priority is to demonstrate a working, secure, repeatable deployment path rather than introduce unnecessary operational complexity.
+The project is owned by a six-person capstone team. The application is currently a single service, and the team does not yet have separate service ownership boundaries that would justify a microservices or Kubernetes-based platform. The capstone priority is to demonstrate a working, secure, repeatable deployment path rather than introduce unnecessary operational complexity.
 
 The deployment should support:
 
@@ -30,7 +30,7 @@ The deployment should support:
 
 ## Decision Drivers
 
-- Small team and limited operational capacity
+- Six-person capstone team with limited Day 2 operations capacity
 - Existing Dockerised Flask application
 - AWS-based deployment target
 - Need for managed compute without managing servers
