@@ -78,3 +78,18 @@ variable "ecr_force_delete" {
   type        = bool
   default     = true
 }
+
+variable "github_repository" {
+  description = "GitHub repository allowed to assume the GitHub Actions deployment role."
+  type        = string
+  default     = "sadikinisaac/singapore-heritage-museum"
+}
+
+variable "github_actions_allowed_refs" {
+  description = "Git refs allowed to assume the GitHub Actions deployment role."
+  type        = list(string)
+  default = [
+    "repo:sadikinisaac/singapore-heritage-museum:ref:refs/heads/dev",
+    "repo:sadikinisaac/singapore-heritage-museum:ref:refs/heads/feature/ian-cicd-ecr-ecs"
+  ]
+}
