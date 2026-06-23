@@ -55,7 +55,7 @@ jobs:
             .
 
       - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@0.71.2
+        uses: aquasecurity/trivy-action@v0.71.2
         with:
           image-ref: '${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}'
           format: table
