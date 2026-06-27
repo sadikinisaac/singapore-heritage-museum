@@ -12,13 +12,12 @@ permissions:
 
 env:
   AWS_REGION: ap-southeast-1
-  AWS_ROLE_ARN: arn:aws:iam::255945442255:role/ianliu-museum-dev-github-actions-role
   ECR_REPOSITORY: ianliu-museum-dev
   ECS_CLUSTER: ianliu-museum-dev-cluster
   ECS_SERVICE: ianliu-museum-dev-service
 
 jobs:
-  build-scan-push-deploy:
+  deploy:
     name: Build, scan, push image and redeploy ECS
     runs-on: ubuntu-latest
 
@@ -29,7 +28,7 @@ jobs:
       - name: Configure AWS credentials using GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Confirm AWS identity
@@ -80,3 +79,46 @@ jobs:
           aws ecs wait services-stable \
             --cluster $ECS_CLUSTER \
             --services $ECS_SERVICE
+
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          JOB_STATUS: ${{ needs.deploy.result }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL secret is not set; skipping Discord notification."
+            exit 0
+          fi
+
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="succeeded"
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="$JOB_STATUS"
+          fi
+
+          cat > payload.json <<EOF
+          {"content":"${STATUS_EMOJI} GitHub Actions workflow **${WORKFLOW_NAME}** ${STATUS_TEXT}\nRepo: ${REPOSITORY}\nBranch: ${BRANCH}\nCommit: ${SHORT_SHA}\nRun: ${RUN_URL}"}
+          EOF
+
+          curl --fail \
+            -H "Content-Type: application/json" \
+            -X POST \
+            -d @payload.json \
+            "$DISCORD_WEBHOOK_URL" \
+            || echo "Discord notification failed, but deployment result is unchanged."
