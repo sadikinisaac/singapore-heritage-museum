@@ -89,7 +89,6 @@ variable "github_actions_allowed_refs" {
   description = "Git refs allowed to assume the GitHub Actions deployment role."
   type        = list(string)
   default = [
-    "repo:sadikinisaac/singapore-heritage-museum:ref:refs/heads/dev",
-    "repo:sadikinisaac/singapore-heritage-museum:ref:refs/heads/feature/ian-cicd-ecr-ecs"
+    "repo:sadikinisaac/singapore-heritage-museum:ref:refs/heads/main",
   ]
 }
