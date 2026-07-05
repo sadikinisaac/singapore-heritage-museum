@@ -22,18 +22,18 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "vpc_id" {
-  description = "VPC ID for ECS and ALB deployment."
+variable "vpc_cidr" {
+  description = "CIDR block for the Terraform-managed VPC."
   type        = string
-  default     = "vpc-00278f610823b1a74"
+  default     = "10.1.0.0/16"
 }
 
-variable "public_subnet_ids" {
-  description = "Public subnet IDs for ALB and ECS Fargate tasks."
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for the Terraform-managed public subnets."
   type        = list(string)
   default = [
-    "subnet-0f5fa81b11e479939",
-    "subnet-0f43c3ae03a178f81",
+    "10.1.0.0/24",
+    "10.1.1.0/24",
   ]
 }
 

@@ -8,13 +8,23 @@ output "aws_account_id" {
 }
 
 output "vpc_id" {
-  description = "Existing VPC ID used for the ECS and ALB deployment."
-  value       = var.vpc_id
+  description = "Terraform-managed VPC ID used for the ECS and ALB deployment."
+  value       = aws_vpc.museum_vpc.id
 }
 
 output "public_subnet_ids" {
-  description = "Existing public subnet IDs used by the ALB and ECS Fargate tasks."
-  value       = var.public_subnet_ids
+  description = "Terraform-managed public subnet IDs used by the ALB and ECS Fargate tasks."
+  value       = aws_subnet.public[*].id
+}
+
+output "internet_gateway_id" {
+  description = "Internet Gateway attached to the Terraform-managed VPC."
+  value       = aws_internet_gateway.museum_igw.id
+}
+
+output "public_route_table_id" {
+  description = "Public route table with default route to the Internet Gateway."
+  value       = aws_route_table.public.id
 }
 
 # -------------------------------------------------------------------

@@ -18,6 +18,73 @@ locals {
 data "aws_caller_identity" "current" {}
 
 # -------------------------------------------------------------------
+# Networking
+# -------------------------------------------------------------------
+# Creates a self-contained public VPC for the capstone deployment.
+# This avoids relying on school-provided VPCs that may be reset or lose their Internet Gateway.
+resource "aws_vpc" "museum_vpc" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name}-vpc"
+  })
+}
+
+# Internet Gateway allows public internet access for the ALB and ECS tasks.
+resource "aws_internet_gateway" "museum_igw" {
+  vpc_id = aws_vpc.museum_vpc.id
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name}-igw"
+  })
+}
+
+# Fetch available AZs in the selected AWS region.
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# Two public subnets across two AZs for the internet-facing ALB.
+resource "aws_subnet" "public" {
+  count = 2
+
+  vpc_id                  = aws_vpc.museum_vpc.id
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name}-public-subnet-${count.index + 1}"
+  })
+}
+
+# Public route table for the public subnets.
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.museum_vpc.id
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name}-public-rt"
+  })
+}
+
+# Default internet route for public subnets.
+resource "aws_route" "public_internet_access" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.museum_igw.id
+}
+
+# Associates both public subnets with the public route table.
+resource "aws_route_table_association" "public" {
+  count = 2
+
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+# -------------------------------------------------------------------
 # Amazon ECR
 # -------------------------------------------------------------------
 # Stores the Docker image that ECS Fargate will run.
@@ -187,7 +254,7 @@ resource "aws_iam_role_policy" "ecs_task_secret_read" {
 resource "aws_security_group" "alb_sg" {
   name        = "${local.name}-alb-sg"
   description = "Allow HTTP traffic to the museum ALB"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.museum_vpc.id
 
   ingress {
     description = "HTTP from internet"
@@ -214,7 +281,7 @@ resource "aws_security_group" "alb_sg" {
 resource "aws_security_group" "ecs_sg" {
   name        = "${local.name}-ecs-sg"
   description = "Allow ALB traffic to ECS tasks"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.museum_vpc.id
 
   ingress {
     description     = "App traffic from ALB"
@@ -246,7 +313,7 @@ resource "aws_lb" "museum_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = var.public_subnet_ids
+  subnets            = aws_subnet.public[*].id
 
   tags = local.common_tags
 }
@@ -257,7 +324,7 @@ resource "aws_lb_target_group" "museum_tg" {
   name        = "${local.name}-tg"
   port        = var.container_port
   protocol    = "HTTP"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.museum_vpc.id
   target_type = "ip"
 
   # ALB uses this endpoint to decide if ECS tasks are healthy.
@@ -380,7 +447,7 @@ resource "aws_ecs_service" "museum_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.public_subnet_ids
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
